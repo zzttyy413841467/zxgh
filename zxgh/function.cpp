@@ -15,25 +15,25 @@ vec dxde1(double e, vec x)
 	return xdot;
 }
 
-vec dxde2(double e, vec x)
+vec dxdt1(double t, vec x)//³õÊ¼¶Î·ÂÕæ
 {
 	double sigma = sig0;
 
 	double r = x(0);
 	double theta = x(1);
 	double phi = x(2);
-	double gamma = x(3);
-	double psi = x(4);
-	double V = sqrt(2 * (1 / r - e));
+	double V = x(3);
+	double gamma = x(4);
+	double psi = x(5);
 	vec aero = calcu_aero(r, V);
 	double L = aero(0);
 	double D = aero(1);
 	vec xdot(6);
-	xdot(0) = sin(gamma) / D;
-	xdot(1) = cos(gamma)*sin(psi) / (r*D*cos(phi));
-	xdot(2) = cos(gamma)*cos(psi) / (r*D);
-	xdot(3) = 1 / (D*V*V)*(L*cos(sigma) + (V*V / r - 1 / r / r)*cos(gamma));
-	xdot(4) = 1 / (D*V)*(L*sin(sigma) / V / cos(gamma) + V / r * cos(gamma)*sin(psi)*tan(phi));
-	xdot(5) = 1 / (D*V);
+	xdot(0) = V * sin(gamma);
+	xdot(1) = V * cos(gamma)*sin(psi) / (r*cos(phi));
+	xdot(2) = V * cos(gamma)*cos(psi) / r;
+	xdot(3) = -D - (sin(gamma) / r / r);
+	xdot(4) = 1 / V * (L * cos(sigma) + (V * V / r - 1 / r / r)*cos(gamma));
+	xdot(5) = (L*sin(sigma) / V / cos(gamma) + V / r * cos(gamma)*sin(psi)*tan(phi));
 	return xdot;
 }
