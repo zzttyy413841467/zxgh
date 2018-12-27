@@ -17,7 +17,7 @@ vec dxde1(double e, vec x)
 
 vec dxde2(double e, vec x)
 {
-	double sigma = sig0 / 180 * pi;
+	double sigma = sig0;
 
 	double r = x(0);
 	double theta = x(1);

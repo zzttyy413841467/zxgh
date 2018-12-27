@@ -10,7 +10,7 @@ mat rk1(vec espan, vec x0)
 	int result;
 	vec x = x0;
 	mat x1(n, x0.n_elem);
-	vec k1(2), k2(2), k3(2), k4(5);
+	vec k1(2), k2(2), k3(2), k4(2);
 	uword i;
 	for (i = 0; i < n; i++)
 	{
