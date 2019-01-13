@@ -37,3 +37,52 @@ vec dxdt1(double t, vec x)//³õÊ¼¶Î·ÂÕæ
 	xdot(5) = (L*sin(sigma) / V / cos(gamma) + V / r * cos(gamma)*sin(psi)*tan(phi));
 	return xdot;
 }
+
+double dvds1(double s, double v)
+{
+	
+	double sigma0=sig0_a/180*pi;
+	double sigma;
+	double vm = 5600 / Vc;
+	double vf = Vf / Vc;
+	if (v > vm)
+	{
+		sigma = limit(sigma0 + (sigma_mid - sigma0) / (vm - vv0)*(v - vv0), v);
+	}
+	else
+	{
+		sigma = limit(sigmaf + (sigma_mid - sigmaf) / (vm - vf)*(v - vf), v);
+	}
+
+
+	double r = 1.01;
+	vec aero = calcu_aero(r, v);
+	double Cl = aero(2);
+	double Cd = aero(3);
+	double vdot = (1 / r - v * v)*(Cd / Cl) / (v*cos(delta_psi)*cos(sigma));
+	return vdot;
+}
+
+vec dvds2(double s, vec x,double sigma)
+{
+	double r = x(0);
+	double v = x(1);
+	double gamma = x(2);
+	
+
+	vec aero = calcu_aero(r, v);
+	double Cl = aero(2);
+	double Cd = aero(3);
+	double D = aero(1);
+	double L = aero(0);
+
+	double rdot = -r * tan(gamma);
+	//double vdot = (-D - (sin(gamma) / r / r)) / (-v * cos(gamma)/ r);
+	double vdot = D * r / (v * cos(gamma)) + tan(gamma) / v / r;
+	//double gammadot = (1 / v * (L * cos(sigma) + (v * v / r - 1 / r / r)*cos(gamma))) / (-v * cos(gamma) *cos(delta_psi) / r);
+	double gammadot = -1 / v / v * (L*r*cos(sigma) / cos(gamma) + (v*v - 1 / r));
+
+	vec xdot = { rdot,vdot,gammadot };
+	return xdot;
+
+}

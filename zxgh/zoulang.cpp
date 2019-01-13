@@ -15,6 +15,7 @@ void zoulang()
 		h_bianjie(i, 3) = newton_h(1, V(i) / Vc, aero(2));
 	}
 	h_bianjie.save("E:/zaixianguihua/pre_corre/h_bianjie.data", raw_ascii);
+	
 }
 
 double newton_h(double x0, double v, double Cl)
@@ -31,4 +32,23 @@ double newton_h(double x0, double v, double Cl)
 		x1 = x0 - f / fdot;
 	}
 	return x1*Re-Re;
+}
+
+void sigma_limit()
+{
+	double K1 = 0;
+	vec v = linspace(850/Vc, 7800/Vc, 140);
+	vec aero(4);
+	mat sigma_bianjie(140, 4);
+	for (uword i = 0; i < 140; i++)
+	{
+		aero = calcu_aero(1.01, v(i));
+		K1 = Re * aero(2) * S / 2 / m;
+		sigma_bianjie(i, 0) = acos(k_q*k_q*(1 - v(i) * v(i))*pow(v(i), 4.3) / (K1*q_max*q_max)) * 180 / pi;
+		sigma_bianjie(i, 1) = acos(Vc*Vc*(1 - v(i) * v(i)) / (2 * K1*1.5e4)) * 180 / pi;
+		//ЗЈЯђЙ§ди
+		sigma_bianjie(i, 2) = acos((1 - v(i) * v(i)) / 2.5*(sqrt(aero(2) * aero(2) + aero(3) * aero(3)) / aero(2))) * 180 / pi;
+		sigma_bianjie(i, 3) = 15.0;
+	}
+	sigma_bianjie.save("E:/zaixianguihua/pre_corre/sigma_bianjie.data", raw_ascii);
 }
