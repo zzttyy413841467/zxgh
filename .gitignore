@@ -264,3 +264,5 @@ __pycache__/
 armadillo
 #	armadillo/
 #
+/zxgh/lapack_win64_MT.dll
+/zxgh/blas_win64_MT.dll

@@ -77,18 +77,18 @@ mat rk2(vec x0)
 	int result;
 	vec x = x0;
 	mat x1(n, x0.n_elem);
-	vec tspan(n);
+	vec s_togo(n);
 	vec k1(6), k2(6), k3(6), k4(6);
 	uword i;
 	vec xxx(2);
 	vec x_1(6), x_2(6);
-	const double eps_y = 1e-5;
+	const double eps_y = 4e-5;
 	double yan=0;
 	double e = 0;
 	for (i = 0; i < n; i++)
 	{
 		x1.row(i) = x.st();
-		tspan(i) = t0;
+		s_togo(i) = acos(cos(x(2))*cos(phif)*cos(x(1) - thetaf) + sin(x(2))*sin(phif));;
 		xxx(0) = x(0);
 		xxx(1) = x(4);
 		e = 1 / x(0) - x(3)*x(3) / 2;
@@ -131,8 +131,8 @@ mat rk2(vec x0)
 		}
 
 	}
-	mat xx(n, 1 + x0.n_elem);
-	xx = join_rows(tspan, x1);
+	mat xx = join_rows(s_togo, x1);
+
 	return xx.rows(0, i - 1);
 }
 
@@ -210,15 +210,17 @@ mat rk4(double s_togo, vec x0)
 	return ex2;
 }
 
-mat rk5(double s_togo, double v)
+mat rk5(double s_togo, vec x1)
 {
+	uword num = 250;
+	double v = x1(4);
 	double x = v;
 	double k1, k2, k3, k4;
 	uword i;
 	double s = 0;
-	vec sspan = linspace(s_togo, 0, 10000);
-	mat ex3(10000, 4);
-	double h = -s_togo / 9999;
+	vec sspan = linspace(s_togo, 0, num);
+	mat ex3(num, 4);
+	double h = -s_togo / (num-1);
 	double sigma0 = sig0_a / 180 * pi;
 	double sigma;
 	double vm = 5600 / Vc;
@@ -232,7 +234,7 @@ mat rk5(double s_togo, double v)
 		sigma = limit(sigmaf + (sigma_mid - sigmaf) / (vm - vf)*(v - vf), v);
 	}
 
-	for (i = 0; i < 9999; i++)
+	for (i = 0; i < (num-1); i++)
 	{
 		ex3(i, 0) = sspan(i);
 		ex3(i, 1) = x;
@@ -264,13 +266,11 @@ mat rk5(double s_togo, double v)
 	ex3(i, 0) = sspan(i);
 	ex3(i, 1) = x;
 	ex3(i, 2) = newton_r_s(x, sigma);
-	for (i = 0; i < 9999; i++)
+	ex3(0, 3) = x1(5);
+	for (i = 0; i < num - 1; i++)
 	{
-		ex3(i, 3) = atan((ex3(i + 1, 2) - ex3(i, 2)) / (-h));
+		ex3(i + 1, 3) = atan((ex3(i + 1, 2) - ex3(i, 2)) / (-h));
 	}
-	
-
-
 
 	return ex3;
 }
