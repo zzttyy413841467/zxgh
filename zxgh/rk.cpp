@@ -294,3 +294,165 @@ double newton_r_s( double v, double sigma)
 	}
 	return x1;
 }
+
+
+mat rk(vec x0)
+{
+	uword n = 6001;
+	vec tspan = linspace(0, 3, n);
+	double h = 3.0 / (n - 1);
+	vec k1(6), k2(6), k3(6), k4(6);
+	uword i;
+	mat xx(n,7);
+
+	vec x = x0;
+	double t = 0;
+
+	mat Ref;
+	Ref.load("E:/zaixianguihua/pre_corre/Ref.data");
+	double ma;
+	double alpha;
+	double sigma;
+	double sigma0 = sig0_a / 180 * pi;
+	double vm = 5600 / Vc;
+	double vf = Vf / Vc;
+	
+	vec sigma_x(n);
+	sigma_x(0) = sig0;
+
+	double s_togo;
+	double dsigma;
+	double dalpha;
+	vec re(9);
+
+	for (i = 0; i < n; i++)
+	{
+		t = tspan(i);
+		xx.submat(i, 1, i, 6) = x.t();
+		xx(i, 0) = t;
+		if (x(3)*Vc < Vf)
+		{
+			break;
+		}
+
+		ma = x(3) * Vc / 340;
+		if (ma >= 15)
+		{
+			alpha = 45 * pi / 180;
+		}
+		else
+		{
+			alpha = (45 - 0.21*(ma - 15)*(ma - 15)) * pi / 180;
+		}
+		if (x(3) > vv0)
+		{
+			sigma = sig0;
+		}
+		else
+		{
+			if (x(3) > vm)
+			{
+				sigma = limit(sigma0 + (sigma_mid - sigma0) / (vm - vv0)*(x(3) - vv0), x(3));
+			}
+			else
+			{
+				sigma = limit(sigmaf + (sigma_mid - sigmaf) / (vm - vf)*(x(3) - vf), x(3));
+			}
+		}
+
+		
+		s_togo = acos(cos(x(2))*cos(phif)*cos(x(1) - thetaf) + sin(x(2))*sin(phif));
+		re = interp1(s_togo, Ref);
+		dsigma = d_mag(re(3)*(x(0) - re(0)) + re(4)*(x(3) - re(1)) + re(5)*(x(4) - re(2)));
+		dalpha = d_mag(re(6)*(x(0) - re(0)) + re(7)*(x(3) - re(1)) + re(8)*(x(4) - re(2)));
+		//sigma = limit(sigma + dsigma, x(3));
+		sigma = sigma + dsigma;
+		alpha = alpha + dalpha;
+		
+
+		
+		if (i > 0)
+		{
+			sigma_x(i) = sigma * sign_decide(sign(sigma_x(i - 1)), x);
+		}
+
+
+		k1 = dxdt2(t, x, sigma_x(i), alpha);
+		k2 = dxdt2(t + h / 2, x + h * k1 / 2, sigma_x(i), alpha);
+		k3 = dxdt2(t + h / 2, x + h * k2 / 2, sigma_x(i), alpha);
+		k4 = dxdt2(t + h, x + h * k3, sigma_x(i), alpha);
+		x= x + (h / 6)*(k1 + 2 * k2 + 2 * k3 + k4);
+
+
+	}
+
+	vec sigma1 = sigma_x.rows(0, i);
+	sigma1.save("E:/zaixianguihua/pre_corre/sigma.data", raw_ascii);
+	
+	return xx.rows(0, i);
+}
+
+
+
+double sign_decide(double sign0, vec x)
+{
+
+	double delt_sigma1 = 10.0 / 180 * pi;
+	double delt_sigma2 = 20.0 / 180 * pi;
+	double delt_sigma3 = 5.0 / 180 * pi;
+	double r = x(0);
+	double theta = x(1);
+	double phi = x(2);
+	double v = x(3);
+	double psi = x(5);
+	double psi_t;
+	if (phif - phi > 0)
+		psi_t = asin(cos(phif)*sin(thetaf - theta) / sin(acos(cos(phi)*cos(phif)*cos(theta - thetaf) + sin(phi)*sin(phif))));
+	else
+		psi_t = pi - asin(cos(phif)*sin(thetaf - theta) / sin(acos(cos(phi)*cos(phif)*cos(theta - thetaf) + sin(phi)*sin(phif))));
+
+	double delt_sigma = psi - psi_t;
+
+	double sign;
+	double V = v * Vc;
+	double delt;
+	if (V >= 5000)
+	{
+		if (delt_sigma > delt_sigma1)
+			sign = -1;
+		else if (delt_sigma <= delt_sigma1 && delt_sigma >= -delt_sigma1)
+			sign = sign0;
+		else
+			sign = 1;
+	}
+	else if (4000 <= V && V < 5000)
+	{
+		if (delt_sigma > delt_sigma2)
+			sign = -1;
+		else if (delt_sigma <= delt_sigma2 && delt_sigma >= -delt_sigma2)
+			sign = sign0;
+		else
+			sign = 1;
+	}
+	else if (3000 <= V && V < 4000)
+	{
+		delt = delt_sigma3 + (delt_sigma2 - delt_sigma3) / (4000 - 3000)*(V - 3000);
+		if (delt_sigma > delt)
+			sign = -1;
+		else if (delt_sigma <= delt && delt_sigma >= -delt)
+			sign = sign0;
+		else
+			sign = 1;
+	}
+	else
+	{
+		if (delt_sigma > delt_sigma3)
+			sign = -1;
+		else if (delt_sigma <= delt_sigma3 && delt_sigma >= -delt_sigma3)
+			sign = sign0;
+		else
+			sign = 1;
+	}
+
+	return sign;
+ }

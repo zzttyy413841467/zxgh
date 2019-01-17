@@ -86,3 +86,71 @@ vec dvds2(double s, vec x,double sigma)
 	return xdot;
 
 }
+
+vec dxdt2(double t, vec x,double sigma,double alpha)
+{
+	
+	double r = x(0);
+	double theta = x(1);
+	double phi = x(2);
+	double V = x(3);
+	double gamma = x(4);
+	double psi = x(5);
+
+	double Cl = cl0 + cl1 * alpha + cl2 * alpha*alpha;
+	double Cd = cd0 + cd1 * Cl + cd2 * Cl*Cl;
+	double h = r * Re - Re;
+	double rho = rho0 * exp(-h / hs);
+
+	double q = 1.0 / 2 * rho * pow(V, 2);
+	
+	double L = q * Cl * S / m * Re;
+	double D = q * Cd * S / m * Re;
+
+	vec xdot(6);
+	xdot(0) = V * sin(gamma);
+	xdot(1) = V * cos(gamma)*sin(psi) / (r*cos(phi));
+	xdot(2) = V * cos(gamma)*cos(psi) / r;
+	xdot(3) = -D - (sin(gamma) / r / r);
+	xdot(4) = 1 / V * (L * cos(sigma) + (V * V / r - 1 / r / r)*cos(gamma));
+	xdot(5) = (L*sin(sigma) / V / cos(gamma) + V / r * cos(gamma)*sin(psi)*tan(phi));
+	return xdot;
+}
+
+vec interp1(double s_togo, mat Ref)
+{
+	uword i = abs(Ref.col(0) - s_togo).index_min();
+	uword n_r = Ref.n_rows;
+	uword n_c = Ref.n_cols;
+	vec out(n_c - 1);
+	if (i == 0)
+	{
+		i = 1;
+	}
+	if (i == n_r - 1)
+	{
+		i = n_r - 2;
+	}
+	for (uword j = 1; j < n_c; j++)
+	{
+		out(j - 1) = (s_togo - Ref(i, 0))*(s_togo - Ref(i + 1, 0)) / (Ref(i - 1, 0) - Ref(i, 0)) / (Ref(i - 1, 0) - Ref(i + 1, 0))*Ref(i - 1, j) +
+			(s_togo - Ref(i - 1, 0))*(s_togo - Ref(i + 1, 0)) / (Ref(i, 0) - Ref(i - 1, 0)) / (Ref(i, 0) - Ref(i + 1, 0))*Ref(i, j) +
+			(s_togo - Ref(i - 1, 0))*(s_togo - Ref(i, 0)) / (Ref(i + 1, 0) - Ref(i - 1, 0)) / (Ref(i + 1, 0) - Ref(i, 0))*Ref(i + 1, j);
+	}
+
+	return out;
+
+}
+
+double d_mag(double theta)
+{
+	if (theta>4*pi/180)
+	{
+		theta = 4 * pi / 180;
+	}
+	if (theta < -4 * pi / 180)
+	{
+		theta = -4 * pi / 180;
+	}
+	return theta;
+}
