@@ -1,5 +1,6 @@
 #include "pch.h"
 
+//初始段规划微分方程
 vec dxde1(double e, vec x)
 {
 	double sigma = sig0_a * pi / 180 ;
@@ -15,7 +16,8 @@ vec dxde1(double e, vec x)
 	return xdot;
 }
 
-vec dxdt1(double t, vec x)//初始段仿真
+//初始段仿真微分方程
+vec dxdt1(double t, vec x)
 {
 	double sigma = sig0;
 
@@ -38,12 +40,13 @@ vec dxdt1(double t, vec x)//初始段仿真
 	return xdot;
 }
 
+//滑翔段规划(单)微分方程
 double dvds1(double s, double v)
 {
 	
 	double sigma0=sig0_a/180*pi;
 	double sigma;
-	double vm = 5600 / Vc;
+	double vm = 4200 / Vc;
 	double vf = Vf / Vc;
 	if (v > vm)
 	{
@@ -59,10 +62,11 @@ double dvds1(double s, double v)
 	vec aero = calcu_aero(r, v);
 	double Cl = aero(2);
 	double Cd = aero(3);
-	double vdot = (1 / r - v * v)*(Cd / Cl) / (v*cos(delta_psi)*cos(sigma));
+	double vdot = (1 / r - v * v)*(Cd / Cl) / (v*cos(1 * delta_psi)*cos(sigma));
 	return vdot;
 }
 
+//滑翔段规划(多)微分方程
 vec dvds2(double s, vec x,double sigma)
 {
 	double r = x(0);
@@ -87,6 +91,7 @@ vec dvds2(double s, vec x,double sigma)
 
 }
 
+//运动微分方程
 vec dxdt2(double t, vec x,double sigma,double alpha)
 {
 	
@@ -117,6 +122,7 @@ vec dxdt2(double t, vec x,double sigma,double alpha)
 	return xdot;
 }
 
+//分段一次插值
 vec interp1(double s_togo, mat Ref)
 {
 	uword i = abs(Ref.col(0) - s_togo).index_min();
@@ -142,6 +148,7 @@ vec interp1(double s_togo, mat Ref)
 
 }
 
+//控制量变化幅度
 double d_mag(double theta)
 {
 	if (theta>4*pi/180)

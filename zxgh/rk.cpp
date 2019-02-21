@@ -1,6 +1,7 @@
 #include "pch.h"
 
-mat rk1(vec espan, vec x0)//初始段规划
+//初始段规划
+mat rk1(vec espan, vec x0)
 {
 	uword n = espan.n_elem;
 	double ef = espan(n-1);
@@ -67,6 +68,7 @@ mat rk2(double e0,double ef, vec x0)
 	return xx.rows(0, i - 1);
 }*/
 
+//计算初始段参考轨迹
 mat rk2(vec x0)
 {
 	
@@ -136,6 +138,7 @@ mat rk2(vec x0)
 	return xx.rows(0, i - 1);
 }
 
+//2范数
 double norm_2(vec x)
 {
 	double s = 0;
@@ -146,6 +149,7 @@ double norm_2(vec x)
 	return sqrt(s);
 }
 
+//滑翔段规划(单)
 double rk3(double s_togo, double v)
 {	
 	double x = v;
@@ -167,6 +171,7 @@ double rk3(double s_togo, double v)
 	return x;
 }
 
+//滑翔段规划(多)
 mat rk4(double s_togo, vec x0)
 {
 	vec x = x0;
@@ -179,7 +184,7 @@ mat rk4(double s_togo, vec x0)
 	double s = 0;
 	double sigma0 = sig0_a / 180 * pi;
 	double sigma;
-	double vm = 5600 / Vc;
+	double vm = 4200 / Vc;
 	double vf = Vf / Vc;
 	double v = 0;
 	for (i = 0; i < n-1; i++)
@@ -210,6 +215,7 @@ mat rk4(double s_togo, vec x0)
 	return ex2;
 }
 
+//滑翔段仿真
 mat rk5(double s_togo, vec x1)
 {
 	uword num = 250;
@@ -223,7 +229,7 @@ mat rk5(double s_togo, vec x1)
 	double h = -s_togo / (num-1);
 	double sigma0 = sig0_a / 180 * pi;
 	double sigma;
-	double vm = 5600 / Vc;
+	double vm = 4200 / Vc;
 	double vf = Vf / Vc;
 	if (v > vm)
 	{
@@ -267,14 +273,16 @@ mat rk5(double s_togo, vec x1)
 	ex3(i, 1) = x;
 	ex3(i, 2) = newton_r_s(x, sigma);
 	ex3(0, 3) = x1(5);
+	//**********************************
 	for (i = 0; i < num - 1; i++)
 	{
 		ex3(i + 1, 3) = atan((ex3(i + 1, 2) - ex3(i, 2)) / (-h));
 	}
-
+	//**********************************
 	return ex3;
 }
 
+//牛顿法(rk5())
 double newton_r_s( double v, double sigma)
 {
 	double f = 0;
@@ -295,7 +303,7 @@ double newton_r_s( double v, double sigma)
 	return x1;
 }
 
-
+//全段仿真
 mat rk(vec x0)
 {
 	uword n = 6001;
@@ -314,7 +322,7 @@ mat rk(vec x0)
 	double alpha;
 	double sigma;
 	double sigma0 = sig0_a / 180 * pi;
-	double vm = 5600 / Vc;
+	double vm = 4200 / Vc;
 	double vf = Vf / Vc;
 	
 	vec sigma_x(n);
@@ -393,13 +401,12 @@ mat rk(vec x0)
 }
 
 
-
 double sign_decide(double sign0, vec x)
 {
 
-	double delt_sigma1 = 10.0 / 180 * pi;
-	double delt_sigma2 = 20.0 / 180 * pi;
-	double delt_sigma3 = 5.0 / 180 * pi;
+	double delt_sigma = 10.0 / 180 * pi;
+	double delt_nz = 20.0 / 180 * pi;
+
 	double r = x(0);
 	double theta = x(1);
 	double phi = x(2);
@@ -411,48 +418,63 @@ double sign_decide(double sign0, vec x)
 	else
 		psi_t = pi - asin(cos(phif)*sin(thetaf - theta) / sin(acos(cos(phi)*cos(phif)*cos(theta - thetaf) + sin(phi)*sin(phif))));
 
-	double delt_sigma = psi - psi_t;
+	int n = nfz.size();
 
 	double sign;
-	double V = v * Vc;
-	double delt;
-	if (V >= 5000)
+
+	double psi_min;
+	double psi_max;
+
+	psi_min = psi_t - delt_sigma;
+	psi_max = psi_t + delt_sigma;
+
+	double psi_nz_center;
+	double psi_nz_tan;
+	double distance;
+	for (int i = n - 1; i >= 0; i--)
 	{
-		if (delt_sigma > delt_sigma1)
-			sign = -1;
-		else if (delt_sigma <= delt_sigma1 && delt_sigma >= -delt_sigma1)
-			sign = sign0;
-		else
-			sign = 1;
-	}
-	else if (4000 <= V && V < 5000)
-	{
-		if (delt_sigma > delt_sigma2)
-			sign = -1;
-		else if (delt_sigma <= delt_sigma2 && delt_sigma >= -delt_sigma2)
-			sign = sign0;
-		else
-			sign = 1;
-	}
-	else if (3000 <= V && V < 4000)
-	{
-		delt = delt_sigma3 + (delt_sigma2 - delt_sigma3) / (4000 - 3000)*(V - 3000);
-		if (delt_sigma > delt)
-			sign = -1;
-		else if (delt_sigma <= delt && delt_sigma >= -delt)
-			sign = sign0;
-		else
-			sign = 1;
-	}
-	else
-	{
-		if (delt_sigma > delt_sigma3)
-			sign = -1;
-		else if (delt_sigma <= delt_sigma3 && delt_sigma >= -delt_sigma3)
-			sign = sign0;
-		else
-			sign = 1;
+
+		if (nfz[i].location == 1)
+		{
+			distance = acos(cos(phi)*cos(nfz[i].phi)*cos(theta - nfz[i].theta) + sin(phi)*sin(nfz[i].phi));
+			psi_nz_center = asin(cos(nfz[i].phi)*sin(nfz[i].theta - theta) / sin(distance));
+			psi_nz_tan = psi_nz_center + asin(nfz[i].radius / distance);
+
+			psi_min = max(psi_min, psi_nz_tan);
+			psi_max = max(psi_max, psi_min + delt_nz);
+		}
+		else if (nfz[i].location == 2)
+		{
+			distance = acos(cos(phi)*cos(nfz[i].phi)*cos(theta - nfz[i].theta) + sin(phi)*sin(nfz[i].phi));
+			psi_nz_center = pi - asin(cos(nfz[i].phi)*sin(nfz[i].theta - theta) / sin(distance));
+			psi_nz_tan = psi_nz_center - asin(nfz[i].radius / distance);
+
+			psi_max = min(psi_max, psi_nz_tan);
+			psi_min = min(psi_min, psi_max - delt_nz);
+		}
 	}
 
+	if (psi < psi_min)
+		sign = 1;
+	else if (psi <= psi_max && psi >= psi_min)
+		sign = sign0;
+	else
+		sign = -1;
+
+
 	return sign;
- }
+}
+
+double max(double a, double b)
+{
+	if (a < b)
+		a = b;
+	return a;
+}
+
+double min(double a, double b)
+{
+	if (a > b)
+		a = b;
+	return a;
+}

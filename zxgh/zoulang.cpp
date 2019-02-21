@@ -1,5 +1,6 @@
 #include "pch.h"
 
+//计算hv走廊
 void zoulang()
 {
 	vec V = linspace(850, 7800, 140);
@@ -8,7 +9,7 @@ void zoulang()
 	for (uword i = 0; i < 140; i++)
 	{
 		aero = calcu_aero(1, V(i) / Vc);
-		h_bianjie(i, 0) = 2 * hs*log(sqrt(1.225)*pow(V(i), 3.15)*9.4369e-5 / q_max);
+		h_bianjie(i, 0) = 2 * hs*log(sqrt(1.225)*pow(V(i), 3.15)*9.4369e-5 / (q_max+0));
 		h_bianjie(i, 1) = hs * log(1.225*pow(V(i), 2) / 2 / 1.5e4);
 		//法向过载
 		h_bianjie(i, 2) = hs * log(1.225*S*V(i)*V(i)*sqrt(aero(2)*aero(2) + aero(3)*aero(3)) / 2 / 2.5 / g0 / m);
@@ -18,6 +19,7 @@ void zoulang()
 	
 }
 
+//牛顿法(走廊())
 double newton_h(double x0, double v, double Cl)
 {
 	double f = 0;
@@ -34,6 +36,7 @@ double newton_h(double x0, double v, double Cl)
 	return x1*Re-Re;
 }
 
+//计算倾侧角边界
 void sigma_limit()
 {
 	double K1 = 0;
