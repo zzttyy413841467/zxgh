@@ -370,14 +370,15 @@ mat rk(vec x0)
 
 		
 		s_togo = acos(cos(x(2))*cos(phif)*cos(x(1) - thetaf) + sin(x(2))*sin(phif));
-		re = interp1(s_togo, Ref);
+		re = interp2(s_togo, Ref);
 		dsigma = d_mag(re(3)*(x(0) - re(0)) + re(4)*(x(3) - re(1)) + re(5)*(x(4) - re(2)));
 		dalpha = d_mag(re(6)*(x(0) - re(0)) + re(7)*(x(3) - re(1)) + re(8)*(x(4) - re(2)));
 		//sigma = limit(sigma + dsigma, x(3));
+
+
+
 		sigma = sigma + dsigma;
 		alpha = alpha + dalpha;
-		
-
 		
 		if (i > 0)
 		{
@@ -405,7 +406,7 @@ double sign_decide(double sign0, vec x)
 {
 
 	double delt_sigma = 10.0 / 180 * pi;
-	double delt_nz = 20.0 / 180 * pi;
+	double delt_nz = 10.0 / 180 * pi;
 
 	double r = x(0);
 	double theta = x(1);
@@ -413,12 +414,18 @@ double sign_decide(double sign0, vec x)
 	double v = x(3);
 	double psi = x(5);
 	double psi_t;
+	int sa;
+	if (57.3*theta>35)
+	{
+		sa = 1;
+	}
+
 	if (phif - phi > 0)
 		psi_t = asin(cos(phif)*sin(thetaf - theta) / sin(acos(cos(phi)*cos(phif)*cos(theta - thetaf) + sin(phi)*sin(phif))));
 	else
 		psi_t = pi - asin(cos(phif)*sin(thetaf - theta) / sin(acos(cos(phi)*cos(phif)*cos(theta - thetaf) + sin(phi)*sin(phif))));
 
-	int n = nfz.size();
+	int n = (int)nfz.size();
 
 	double sign;
 
@@ -478,3 +485,311 @@ double min(double a, double b)
 		a = b;
 	return a;
 }
+
+/***********************************************************************************************************************************************************/
+//路径点策略，没完。。
+/***********************************************************************************************************************************************************/
+vec newton_waypoint(Noflyzone nfz1, Noflyzone nfz2)
+{
+	vec pos(2);
+	pos(0) = (nfz1.theta + nfz2.theta) / 2;
+	pos(1) = (nfz1.phi + nfz2.phi) / 2;
+	
+	vec delta_pos = { 1e-3, 1e-3 };
+	vec Fx(2);
+	mat Fdotx(2, 2);
+
+	const double eps = 1e-8;
+	while (norm(delta_pos,2) / norm(pos,2) >= eps)
+	{
+		pos += delta_pos;
+		Fx = F_x(pos, nfz1, nfz2);
+		Fdotx = dF_dx(pos, nfz1, nfz2);
+		delta_pos = solve(Fdotx, - Fx);
+	}
+	return pos;
+}
+
+vec F_x(vec x, Noflyzone nfz1, Noflyzone nfz2)
+{
+	double distance;
+	double distance1;
+	double distance2;
+	if (nfz1.radius == nfz2.radius)
+	{
+		distance = acos(cos(nfz1.phi)*cos(nfz2.phi)*cos(nfz1.theta - nfz2.theta) + sin(nfz1.phi)*sin(nfz2.phi));
+		distance1 = distance / 2;
+		distance2 = distance1;
+	}
+	else
+	{
+		distance = acos(cos(nfz1.phi)*cos(nfz2.phi)*cos(nfz1.theta - nfz2.theta) + sin(nfz1.phi)*sin(nfz2.phi));
+		distance1 = newton_distance(nfz1.radius, nfz2.radius, distance);
+		distance2 = distance - distance1;
+	}
+	vec result(2);
+	result(0) = cos(nfz1.phi)*cos(x(1))*cos(nfz1.theta - x(0)) + sin(nfz1.phi)*sin(x(1)) - cos(distance1);
+	result(1) = cos(nfz2.phi)*cos(x(1))*cos(nfz2.theta - x(0)) + sin(nfz2.phi)*sin(x(1)) - cos(distance2);
+
+
+	return result;
+}
+
+mat dF_dx(vec x, Noflyzone nfz1, Noflyzone nfz2)
+{
+	mat result(2, 2);
+	result(0, 0) = cos(nfz1.phi)*cos(x(1))*sin(nfz1.theta - x(0));
+	result(0, 1) = -cos(nfz1.phi)*sin(x(1))*cos(nfz1.theta - x(0)) + sin(nfz1.phi)*cos(x(1));
+	result(1, 0) = cos(nfz2.phi)*cos(x(1))*sin(nfz2.theta - x(0));
+	result(1, 1) = -cos(nfz2.phi)*sin(x(1))*cos(nfz2.theta - x(0)) + sin(nfz2.phi)*cos(x(1));
+	return result;
+}
+
+double newton_distance(double r1,double r2,double distance)
+{
+	double x = distance / 2;
+	double x0 = distance / 16;
+	double eps = 1e-10;
+	double f;
+	double fdot;
+	while (fabs(x - x0) / fabs(x) >= eps)
+	{
+		x0 = x;
+		f = sin(r2)*sin(x) - sin(r1)*sin(distance - x);
+		fdot = sin(r2)*cos(x) + sin(r1)*cos(distance - x);
+		x = x - f / fdot;
+	}
+	return x;
+}
+
+
+vec rk_waypoint(vec x0, double theta, double t_rev, int flag)
+{
+	uword n = 100001;
+	vec tspan = linspace(0, 3, n);
+	double h = 3.0 / (n - 1);
+	vec k1(6), k2(6), k3(6), k4(6);
+
+	vec x = x0;
+	double t = 0;
+
+	double ma;
+	double alpha;
+	double sigma;
+	double sigma0 = sig0_a / 180 * pi;
+	double vm = 4200 / Vc;
+	double vf = Vf / Vc;
+
+	vec re(7);
+
+	for (auto t:tspan)
+	{
+
+		//////
+		if (x(1) > theta)
+		{
+			break;
+		}
+
+		ma = x(3) * Vc / 340;
+		if (ma >= 15)
+		{
+			alpha = 45 * pi / 180;
+		}
+		else
+		{
+			alpha = (45 - 0.21*(ma - 15)*(ma - 15)) * pi / 180;
+		}
+		if (x(3) > vv0)
+		{
+			sigma = sig0;
+		}
+		else
+		{
+			if (x(3) > vm)
+			{
+				sigma = limit(sigma0 + (sigma_mid - sigma0) / (vm - vv0)*(x(3) - vv0), x(3));
+			}
+			else
+			{
+				sigma = limit(sigmaf + (sigma_mid - sigmaf) / (vm - vf)*(x(3) - vf), x(3));
+			}
+		}
+
+		if (flag == 1)
+		{
+			if (t > t_rev)
+			{
+				sigma = -sigma;
+			}
+		}
+		else if (flag == 2)
+		{
+			if (t < t_rev)
+			{
+				sigma = -sigma;
+			}
+		}
+		else
+		{
+			cout << "error" << endl;
+		}
+		
+
+		k1 = dxdt2(t, x, sigma, alpha);
+		k2 = dxdt2(t + h / 2, x + h * k1 / 2, sigma, alpha);
+		k3 = dxdt2(t + h / 2, x + h * k2 / 2, sigma, alpha);
+		k4 = dxdt2(t + h, x + h * k3, sigma, alpha);
+		x = x + (h / 6)*(k1 + 2 * k2 + 2 * k3 + k4);
+
+	}
+	re(0) = t;
+	re.rows(1, 6) = x;
+	return re;
+}
+
+void calcu_waypoint(vec x0, Noflyzone nfz1, Noflyzone nfz2)
+{
+	vec waypoint_pos = newton_waypoint(nfz1, nfz2);
+
+	double theta_waypoint = waypoint_pos(0);
+	double phi_waypoint = waypoint_pos(1);
+	vec re0 = rk_waypoint(x0, theta_waypoint, 3, 1);
+	vec t_rev(1000);
+	t_rev(0) = 1.0 / 2 * re0(0);
+	t_rev(1) = t_rev(0) + 0.01;
+	uword i;
+	vec re(7);
+	vec phi_theta(1000);
+
+	double t_a;
+	vec psi_wp_m(2);
+	promise<double> promiseObj;
+	future<double> futureObj = promiseObj.get_future();
+	thread th(th_calcu_reasonable_angle, &promiseObj, x0, waypoint_pos);
+	psi_wp_m(1) = futureObj.get();
+	th.detach();
+	for (i = 0; i < 999; i++)
+	{
+		re = rk_waypoint(x0, theta_waypoint, t_rev(i), 1);
+		phi_theta(i) = re(3);
+
+		if (fabs(phi_waypoint - phi_theta(i))/fabs(phi_waypoint) < 1e-5)
+		{
+			break;
+		}
+		if (i > 0)
+		{
+			t_a = t_rev(i) - (t_rev(i) - t_rev(i - 1)) / (phi_theta(i) - phi_theta(i - 1))*(phi_theta(i) - phi_waypoint);
+			if (t_a < 0)
+				t_a = 0.01;
+			else if (t_a > re0(0))
+				t_a = re0(0) - 0.01;
+			t_rev(i + 1) = t_a;
+		}
+	}
+	psi_wp_m(0) = re(6);
+	/*for (i = 0; i < 999; i++)
+	{
+		re = rk_waypoint(x0, theta_waypoint, t_rev(i), 2);
+		phi_theta(i) = re(3);
+
+		if (fabs(phi_waypoint - phi_theta(i)) / fabs(phi_waypoint) < 1e-5)
+		{
+			break;
+		}
+		if (i > 0)
+		{
+			t_a = t_rev(i) - (t_rev(i) - t_rev(i - 1)) / (phi_theta(i) - phi_theta(i - 1))*(phi_theta(i) - phi_waypoint);
+			if (t_a < 0)
+				t_a = 0.01;
+			else if (t_a > re0(0))
+				t_a = re0(0) - 0.01;
+			t_rev(i + 1) = t_a;
+		}
+	}
+	psi_wp_m(1) = re(6);*/
+	
+	double psi_nz_center;
+	vec psi_nz_tan(2);
+	double distance;
+	if (nfz1.location == 1)
+	{
+		distance = acos(cos(phi_waypoint)*cos(nfz1.phi)*cos(theta_waypoint - nfz1.theta) + sin(phi_waypoint)*sin(nfz1.phi));
+		psi_nz_center = asin(cos(nfz1.phi)*sin(nfz1.theta - theta_waypoint) / sin(distance));
+		psi_nz_tan(0) = psi_nz_center + asin(nfz1.radius / distance);
+	}
+	else if (nfz1.location == 2)
+	{
+		distance = acos(cos(phi_waypoint)*cos(nfz1.phi)*cos(theta_waypoint - nfz1.theta) + sin(phi_waypoint)*sin(nfz1.phi));
+		psi_nz_center = pi - asin(cos(nfz1.phi)*sin(nfz1.theta - theta_waypoint) / sin(distance));
+		psi_nz_tan(0) = psi_nz_center - asin(nfz1.radius / distance);
+	}
+	if (nfz2.location == 1)
+	{
+		distance = acos(cos(phi_waypoint)*cos(nfz2.phi)*cos(theta_waypoint - nfz2.theta) + sin(phi_waypoint)*sin(nfz2.phi));
+		psi_nz_center = asin(cos(nfz2.phi)*sin(nfz2.theta - theta_waypoint) / sin(distance));
+		psi_nz_tan(1) = psi_nz_center + asin(nfz2.radius / distance);
+	}
+	else if (nfz2.location == 2)
+	{
+		distance = acos(cos(phi_waypoint)*cos(nfz2.phi)*cos(theta_waypoint - nfz2.theta) + sin(phi_waypoint)*sin(nfz2.phi));
+		psi_nz_center = pi - asin(cos(nfz2.phi)*sin(nfz2.theta - theta_waypoint) / sin(distance));
+		psi_nz_tan(1) = psi_nz_center - asin(nfz2.radius / distance);
+	}
+	vec qujian(2);
+	if (min(psi_wp_m) > max(psi_nz_tan) || min(psi_nz_tan) > max(psi_wp_m))
+	{
+		cout << "can't arrive the waypoint " << endl;
+	}
+	else
+	{
+		qujian(0) = max(min(psi_wp_m), min(psi_nz_tan));
+		qujian(1) = min(max(psi_wp_m), max(psi_nz_tan));
+	}
+	double psi_waypoint = (qujian(0) + qujian(1)) / 2;
+	cout << psi_waypoint << endl;
+
+
+
+}
+
+void th_calcu_reasonable_angle(promise<double> *promObj, vec x0, vec waypoint_pos)
+{
+	double theta_waypoint = waypoint_pos(0);
+	double phi_waypoint = waypoint_pos(1);
+	vec re0 = rk_waypoint(x0, theta_waypoint, 3, 2);
+	double t_rev0 = re0(0);
+	vec t_rev(1000);
+	t_rev(0) = 2.0 / 3 * t_rev0;
+	t_rev(1) = t_rev(0) - 0.01;
+	uword i;
+	vec re(7);
+	vec phi_theta(1000);
+
+	double t_a;
+	for (i = 0; i < 999; i++)
+	{
+		re = rk_waypoint(x0, theta_waypoint, t_rev(i), 2);
+		phi_theta(i) = re(3);
+
+		if (fabs(phi_waypoint - phi_theta(i)) / fabs(phi_waypoint) < 1e-5)
+		{
+			break;
+		}
+		if (i > 0)
+		{
+			t_a = t_rev(i) - (t_rev(i) - t_rev(i - 1)) / (phi_theta(i) - phi_theta(i - 1))*(phi_theta(i) - phi_waypoint);
+			if (t_a < 0)
+				t_a = 0.01;
+			else if (t_a > t_rev0)
+				t_a = t_rev0 - 0.01;
+			t_rev(i + 1) = t_a;
+		}
+	}
+	promObj->set_value(re(6));
+
+}
+
+/***********************************************************************************************************************************************************/
+/***********************************************************************************************************************************************************/

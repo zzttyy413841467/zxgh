@@ -33,7 +33,7 @@ double newton_h(double x0, double v, double Cl)
 		fdot = -2 / pow(x0, 3) + v * v / pow(x0, 2) + 1.0 / 2 * rho0*exp(-(x0*Re - Re) / hs)*v*v*Cl*S / m * Re * Re / hs * cos(10 * pi / 180);
 		x1 = x0 - f / fdot;
 	}
-	return x1*Re-Re;
+	return x1 * Re - Re;
 }
 
 //º∆À„«„≤‡Ω«±ﬂΩÁ

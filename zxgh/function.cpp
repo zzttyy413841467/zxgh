@@ -122,8 +122,8 @@ vec dxdt2(double t, vec x,double sigma,double alpha)
 	return xdot;
 }
 
-//分段一次插值
-vec interp1(double s_togo, mat Ref)
+//分段二次插值
+vec interp2(double s_togo, mat Ref)
 {
 	uword i = abs(Ref.col(0) - s_togo).index_min();
 	uword n_r = Ref.n_rows;
@@ -148,16 +148,17 @@ vec interp1(double s_togo, mat Ref)
 
 }
 
+
 //控制量变化幅度
 double d_mag(double theta)
 {
-	if (theta>4*pi/180)
+	if (theta>5 * pi / 180)
 	{
-		theta = 4 * pi / 180;
+		theta = 5 * pi / 180;
 	}
-	if (theta < -4 * pi / 180)
+	if (theta < -5 * pi / 180)
 	{
-		theta = -4 * pi / 180;
+		theta = -5 * pi / 180;
 	}
 	return theta;
 }
