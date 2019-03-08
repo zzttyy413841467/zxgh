@@ -67,7 +67,7 @@ double dvds1(double s, double v)
 }
 
 //滑翔段规划(多)微分方程
-vec dvds2(double s, vec x,double sigma)
+vec dvds2(double s, vec x, double sigma)
 {
 	double r = x(0);
 	double v = x(1);
@@ -90,6 +90,30 @@ vec dvds2(double s, vec x,double sigma)
 	return xdot;
 
 }
+
+
+vec dxde2(double e, vec x, double sigma)
+{
+	double r = x(0);
+	double gamma = x(1);
+	double s_togo = x(2);
+
+	double v = sqrt(2 * (1 / r - e));
+
+	vec aero = calcu_aero(r, v);
+	double Cl = aero(2);
+	double Cd = aero(3);
+	double D = aero(1);
+	double L = aero(0);
+
+	
+	vec xdot(3);
+	xdot(0) = sin(gamma) / D;
+	xdot(1) = 1 / (D*v*v)*(L*cos(sigma) + (v*v / r - 1 / r / r)*cos(gamma));
+	xdot(2) = -cos(gamma) / D / r;
+	return xdot;
+}
+
 
 //运动微分方程
 vec dxdt2(double t, vec x,double sigma,double alpha)
@@ -162,3 +186,4 @@ double d_mag(double theta)
 	}
 	return theta;
 }
+
