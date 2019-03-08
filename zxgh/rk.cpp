@@ -388,7 +388,7 @@ mat rk(vec x0)
 	for (i = 0; i < n; i++)
 	{
 		//中间某时刻突然发现一个禁飞区
-		if (i == 1200)
+		if (i == 1700)
 		{
 			Noflyzone nfz4;
 			nfz4.theta = 47.0 / 180.0 * pi;
