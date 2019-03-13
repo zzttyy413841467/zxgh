@@ -69,9 +69,10 @@ mat rk2(double e0,double ef, vec x0)
 }*/
 
 //计算初始段参考轨迹
-mat rk2(vec x0)
+mat rk2(vec x0, vec statef)
 {
-	
+	double thetaf = statef[1];
+	double phif = statef[2];
 	uword n = 10000;
 	double h = 0.1;
 	double hh = h / 2;
@@ -171,45 +172,45 @@ double rk3(double s_togo, double v)
 	return x;
 }
 
-//滑翔段规划(e为自变量)
-double rk4(double e0, vec x0)
-{
-	vec x = x0;
-	vec k1(3), k2(3), k3(3), k4(3);
-	uword i = 0;
-	uword n = 500;
-	double ef = 1.0 / ((Re + Hf) / Re) - pow(Vf / Vc, 2) / 2;
-	vec espan = linspace(e0, ef, n);
-	double h = (ef - e0) / (n - 1);
-	double e = 0;
-	double sigma0 = sig0_a / 180 * pi;
-	double sigma;
-	double vm = 4200 / Vc;
-	double vf = Vf / Vc;
-	double v = 0;
-	for (i = 0; i < n - 1; i++)
-	{
-		e = espan(i);
-		v = sqrt(2 * (1 / x(0) - e));
-		
-		if (v > vm)
-		{
-			sigma = limit(sigma0 + (sigma_mid - sigma0) / (vm - vv0)*(v - vv0), v);
-		}
-		else
-		{
-			sigma = limit(sigmaf + (sigma_mid - sigmaf) / (vm - vf)*(v - vf), v);
-		}
-		k1 = dxde2(e, x, sigma);
-		k2 = dxde2(e + h / 2, x + h * k1 / 2, sigma);
-		k3 = dxde2(e + h / 2, x + h * k2 / 2, sigma);
-		k4 = dxde2(e + h, x + h * k3, sigma);
-		x = x + (h / 6)*(k1 + 2 * k2 + 2 * k3 + k4);
-
-	}
-
-	return x(2);
-}
+////滑翔段规划(e为自变量)
+//double rk4(double e0, vec x0)
+//{
+//	vec x = x0;
+//	vec k1(3), k2(3), k3(3), k4(3);
+//	uword i = 0;
+//	uword n = 500;
+//	double ef = 1.0 / ((Re + Hf) / Re) - pow(Vf / Vc, 2) / 2;
+//	vec espan = linspace(e0, ef, n);
+//	double h = (ef - e0) / (n - 1);
+//	double e = 0;
+//	double sigma0 = sig0_a / 180 * pi;
+//	double sigma;
+//	double vm = 4200 / Vc;
+//	double vf = Vf / Vc;
+//	double v = 0;
+//	for (i = 0; i < n - 1; i++)
+//	{
+//		e = espan(i);
+//		v = sqrt(2 * (1 / x(0) - e));
+//		
+//		if (v > vm)
+//		{
+//			sigma = limit(sigma0 + (sigma_mid - sigma0) / (vm - vv0)*(v - vv0), v);
+//		}
+//		else
+//		{
+//			sigma = limit(sigmaf + (sigma_mid - sigmaf) / (vm - vf)*(v - vf), v);
+//		}
+//		k1 = dxde2(e, x, sigma);
+//		k2 = dxde2(e + h / 2, x + h * k1 / 2, sigma);
+//		k3 = dxde2(e + h / 2, x + h * k2 / 2, sigma);
+//		k4 = dxde2(e + h, x + h * k3, sigma);
+//		x = x + (h / 6)*(k1 + 2 * k2 + 2 * k3 + k4);
+//
+//	}
+//
+//	return x(2);
+//}
 
 //滑翔段仿真
 mat rk5(double s_togo, vec x1)
@@ -226,7 +227,7 @@ mat rk5(double s_togo, vec x1)
 	double sigma0 = sig0_a / 180 * pi;
 	double sigma;
 	double vm = 4200 / Vc;
-	double vf = Vf / Vc;
+	double vf = vvf;
 	if (v > vm)
 	{
 		sigma = limit(sigma0 + (sigma_mid - sigma0) / (vm - vv0)*(v - vv0), v);
@@ -279,59 +280,59 @@ mat rk5(double s_togo, vec x1)
 }
 
 
-mat rk6(double e0, vec x0)
-{
-	vec x = x0;
-	vec k1(3), k2(3), k3(3), k4(3);
-	uword i = 0;
-	uword n = 500;
-	double ef = 1.0 / ((Re + Hf) / Re) - pow(Vf / Vc, 2) / 2;
-	vec espan = linspace(e0, ef, n);
-	double h = (ef - e0) / (n - 1);
-	double e = 0;
-	double sigma0 = sig0_a / 180 * pi;
-	double sigma;
-	double vm = 4200 / Vc;
-	double vf = Vf / Vc;
-	double v = 0;
-	mat ex2(n, 6);
-	for (i = 0; i < n - 1; i++)
-	{
-		e = espan(i);
-		v = sqrt(2 * (1 / x(0) - e));
-		ex2(i, 5) = e;
-		ex2(i, 0) = x(2);
-		ex2(i, 1) = x(0);
-		ex2(i, 3) = x(1);
-		ex2(i, 2) = v;
-
-
-		if (v > vm)
-		{
-			sigma = limit(sigma0 + (sigma_mid - sigma0) / (vm - vv0)*(v - vv0), v);
-		}
-		else
-		{
-			sigma = limit(sigmaf + (sigma_mid - sigmaf) / (vm - vf)*(v - vf), v);
-		}
-		ex2(i, 4) = sigma;
-		k1 = dxde2(e, x, sigma);
-		k2 = dxde2(e + h / 2, x + h * k1 / 2, sigma);
-		k3 = dxde2(e + h / 2, x + h * k2 / 2, sigma);
-		k4 = dxde2(e + h, x + h * k3, sigma);
-		x = x + (h / 6)*(k1 + 2 * k2 + 2 * k3 + k4);
-
-	}
-	e = espan(i);
-	v = sqrt(2 * (1 / x(0) - e));
-	ex2(i, 5) = e;
-	ex2(i, 0) = x(2);
-	ex2(i, 1) = x(0);
-	ex2(i, 3) = x(1);
-	ex2(i, 2) = v;
-
-	return ex2;
-}
+//mat rk6(double e0, vec x0)
+//{
+//	vec x = x0;
+//	vec k1(3), k2(3), k3(3), k4(3);
+//	uword i = 0;
+//	uword n = 500;
+//	double ef = 1.0 / ((Re + Hf) / Re) - pow(Vf / Vc, 2) / 2;
+//	vec espan = linspace(e0, ef, n);
+//	double h = (ef - e0) / (n - 1);
+//	double e = 0;
+//	double sigma0 = sig0_a / 180 * pi;
+//	double sigma;
+//	double vm = 4200 / Vc;
+//	double vf = Vf / Vc;
+//	double v = 0;
+//	mat ex2(n, 6);
+//	for (i = 0; i < n - 1; i++)
+//	{
+//		e = espan(i);
+//		v = sqrt(2 * (1 / x(0) - e));
+//		ex2(i, 5) = e;
+//		ex2(i, 0) = x(2);
+//		ex2(i, 1) = x(0);
+//		ex2(i, 3) = x(1);
+//		ex2(i, 2) = v;
+//
+//
+//		if (v > vm)
+//		{
+//			sigma = limit(sigma0 + (sigma_mid - sigma0) / (vm - vv0)*(v - vv0), v);
+//		}
+//		else
+//		{
+//			sigma = limit(sigmaf + (sigma_mid - sigmaf) / (vm - vf)*(v - vf), v);
+//		}
+//		ex2(i, 4) = sigma;
+//		k1 = dxde2(e, x, sigma);
+//		k2 = dxde2(e + h / 2, x + h * k1 / 2, sigma);
+//		k3 = dxde2(e + h / 2, x + h * k2 / 2, sigma);
+//		k4 = dxde2(e + h, x + h * k3, sigma);
+//		x = x + (h / 6)*(k1 + 2 * k2 + 2 * k3 + k4);
+//
+//	}
+//	e = espan(i);
+//	v = sqrt(2 * (1 / x(0) - e));
+//	ex2(i, 5) = e;
+//	ex2(i, 0) = x(2);
+//	ex2(i, 1) = x(0);
+//	ex2(i, 3) = x(1);
+//	ex2(i, 2) = v;
+//
+//	return ex2;
+//}
 
 
 //牛顿法(rk5())
@@ -356,8 +357,12 @@ double newton_r_s( double v, double sigma)
 }
 
 //全段仿真
-mat rk(vec x0)
+mat rk(vec x0,vec statef)
 {
+	getTime();
+	cout << "再入仿真开始" << endl;
+	double thetaf = statef[1];
+	double phif = statef[2];
 	uword n = 6001;
 	vec tspan = linspace(0, 3, n);
 	double h = 3.0 / (n - 1);
@@ -375,7 +380,7 @@ mat rk(vec x0)
 	double sigma;
 	double sigma0 = sig0_a / 180 * pi;
 	double vm = 4200 / Vc;
-	double vf = Vf / Vc;
+	double vf = statef[3];
 	
 	vec sigma_x(n);
 	sigma_x(0) = sig0;
@@ -390,19 +395,14 @@ mat rk(vec x0)
 		//中间某时刻突然发现一个禁飞区
 		if (i == 1700)
 		{
-			Noflyzone nfz4;
-			nfz4.theta = 47.0 / 180.0 * pi;
-			nfz4.phi = 20.5 / 180.0 * pi;
-			nfz4.radius = 3 / 180.0 * pi;
-			nfz4.location = 1;
+			Noflyzone nfz4(47.0 / 180.0 * pi, 20.5 / 180.0 * pi, 3 / 180.0 * pi, 1);
 			nfz.push_back(nfz4);
 		}
-
 
 		t = tspan(i);
 		xx.submat(i, 1, i, 6) = x.t();
 		xx(i, 0) = t;
-		if (x(3)*Vc < Vf)
+		if (x(3) < vf)
 		{
 			break;
 		}
@@ -446,7 +446,7 @@ mat rk(vec x0)
 		
 		if (i > 0)
 		{
-			sigma_x(i) = sigma * sign_decide(sign(sigma_x(i - 1)), x);
+			sigma_x(i) = sigma * sign_decide(sign(sigma_x(i - 1)), x, statef);
 		}
 
 
@@ -466,8 +466,10 @@ mat rk(vec x0)
 }
 
 
-double sign_decide(double sign0, vec x)
+double sign_decide(double sign0, vec x, vec statef)
 {
+	double thetaf = statef[1];
+	double phif = statef[2];
 
 	double delt_sigma = 8.0 / 180 * pi;
 	double delt_nz = 4.0 / 180 * pi;
@@ -642,7 +644,7 @@ vec rk_waypoint(vec x0, double theta, double t_rev, int flag)
 	double sigma;
 	double sigma0 = sig0_a / 180 * pi;
 	double vm = 4200 / Vc;
-	double vf = Vf / Vc;
+	double vf = vvf;
 
 	vec re(7);
 

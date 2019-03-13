@@ -47,7 +47,7 @@ double dvds1(double s, double v)
 	double sigma0=sig0_a/180*pi;
 	double sigma;
 	double vm = 4200 / Vc;
-	double vf = Vf / Vc;
+	double vf = vvf;
 	if (v > vm)
 	{
 		sigma = limit(sigma0 + (sigma_mid - sigma0) / (vm - vv0)*(v - vv0), v);
@@ -186,4 +186,3 @@ double d_mag(double theta)
 	}
 	return theta;
 }
-
