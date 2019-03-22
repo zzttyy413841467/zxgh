@@ -395,10 +395,12 @@ mat rk(vec x0,vec statef)
 		//中间某时刻突然发现一个禁飞区
 		if (i == 1700)
 		{
+			getTime();
+			cout << "加入新的禁飞区" << endl;
 			Noflyzone nfz4(47.0 / 180.0 * pi, 20.5 / 180.0 * pi, 3 / 180.0 * pi, 1);
 			nfz.push_back(nfz4);
+			waypoint.row(nfz.size() - 2) = newton_waypoint(nfz[nfz.size()-2], nfz.back()).t();
 		}
-
 		t = tspan(i);
 		xx.submat(i, 1, i, 6) = x.t();
 		xx(i, 0) = t;
@@ -468,10 +470,15 @@ mat rk(vec x0,vec statef)
 
 double sign_decide(double sign0, vec x, vec statef)
 {
-	double thetaf = statef[1];
-	double phif = statef[2];
+	int n = (int)nfz.size();
 
-	double delt_sigma = 8.0 / 180 * pi;
+	double thetaf;
+	double phif;
+
+	thetaf = statef[1];
+	phif = statef[2];
+
+	double delt_sigma = 7.0 / 180 * pi;
 	double delt_nz = 4.0 / 180 * pi;
 
 	double r = x(0);
@@ -481,13 +488,22 @@ double sign_decide(double sign0, vec x, vec statef)
 	double psi = x(5);
 	double psi_t;
 
+	/*for (int i = 0; i < n - 2; i++)
+	{
+		if (waypoint(i, 0) > theta)
+		{
+			thetaf = waypoint(i, 0);
+			phif = waypoint(i, 1);
+			break;
+		}
+	}*/
 
 	if (phif - phi > 0)
 		psi_t = asin(cos(phif)*sin(thetaf - theta) / sin(acos(cos(phi)*cos(phif)*cos(theta - thetaf) + sin(phi)*sin(phif))));
 	else
 		psi_t = pi - asin(cos(phif)*sin(thetaf - theta) / sin(acos(cos(phi)*cos(phif)*cos(theta - thetaf) + sin(phi)*sin(phif))));
 
-	int n = (int)nfz.size();
+	
 
 	double sign;
 
@@ -555,6 +571,8 @@ double min(double a, double b)
 /***********************************************************************************************************************************************************/
 //路径点策略，没完。。
 /***********************************************************************************************************************************************************/
+
+
 vec newton_waypoint(Noflyzone nfz1, Noflyzone nfz2)
 {
 	vec pos(2);
