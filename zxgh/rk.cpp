@@ -393,14 +393,15 @@ mat rk(vec x0,vec statef)
 	for (i = 0; i < n; i++)
 	{
 		//中间某时刻突然发现一个禁飞区
-		if (i == 1700)
-		{
-			getTime();
-			cout << "加入新的禁飞区" << endl;
-			Noflyzone nfz4(47.0 / 180.0 * pi, 20.5 / 180.0 * pi, 3 / 180.0 * pi, 1);
-			nfz.push_back(nfz4);
-			waypoint.row(nfz.size() - 2) = newton_waypoint(nfz[nfz.size()-2], nfz.back()).t();
-		}
+		//if (i == 1500)
+		//{
+		//	getTime();
+		//	cout << "加入新的禁飞区" << endl;
+		//	//Noflyzone nfz4(43.0 / 180.0 * pi, 13.5 / 180.0 * pi, 3 / 180.0 * pi, 2);
+		//	Noflyzone nfz4(47.0 / 180.0 * pi, 20.5 / 180.0 * pi, 3 / 180.0 * pi, 1);
+		//	nfz.push_back(nfz4);
+		//	waypoint.row(nfz.size() - 2) = newton_waypoint(nfz[nfz.size() - 2], nfz.back()).t();
+		//}
 		t = tspan(i);
 		xx.submat(i, 1, i, 6) = x.t();
 		xx(i, 0) = t;
@@ -408,7 +409,7 @@ mat rk(vec x0,vec statef)
 		{
 			break;
 		}
-
+		
 		ma = x(3) * Vc / 340;
 		if (ma >= 15)
 		{
@@ -436,6 +437,10 @@ mat rk(vec x0,vec statef)
 
 		
 		s_togo = acos(cos(x(2))*cos(phif)*cos(x(1) - thetaf) + sin(x(2))*sin(phif));
+		if (Re*s_togo < 60000)
+		{
+			break;
+		}
 		re = interp2(s_togo, Ref);
 		dsigma = d_mag(re(3)*(x(0) - re(0)) + re(4)*(x(3) - re(1)) + re(5)*(x(4) - re(2)));
 		dalpha = d_mag(re(6)*(x(0) - re(0)) + re(7)*(x(3) - re(1)) + re(8)*(x(4) - re(2)));
@@ -496,7 +501,7 @@ double sign_decide(double sign0, vec x, vec statef)
 			phif = waypoint(i, 1);
 			break;
 		}
-	}*/
+	}路径点*/
 
 	if (phif - phi > 0)
 		psi_t = asin(cos(phif)*sin(thetaf - theta) / sin(acos(cos(phi)*cos(phif)*cos(theta - thetaf) + sin(phi)*sin(phif))));
@@ -567,6 +572,41 @@ double min(double a, double b)
 		a = b;
 	return a;
 }
+
+mat rk_off_init(vec espan, vec x0)
+{
+	uword n = espan.n_elem;
+	double ef = espan(n - 1);
+	double e0 = espan(0);
+	double h = (ef - e0) / (n - 1);
+	double e = 0;
+	int result;
+	vec x = x0;
+	mat x1(n, x0.n_elem);
+	vec k1(3), k2(3), k3(3), k4(3);
+	uword i;
+	for (i = 0; i < n; i++)
+	{
+		e = espan(i);
+		x1.row(i) = x.st();
+		result = trans(e, x);
+		if (result == 1)
+		{
+			break;
+		}
+		k1 = dxde_off_init(e, x);
+		k2 = dxde_off_init(e + h / 2, x + h * k1 / 2);
+		k3 = dxde_off_init(e + h / 2, x + h * k2 / 2);
+		k4 = dxde_off_init(e + h, x + h * k3);
+		x = x + (h / 6)*(k1 + 2 * k2 + 2 * k3 + k4);
+	}
+	mat xx(n, 1 + x0.n_elem);
+	xx = join_rows(espan, x1);
+	return xx.rows(0, i - 1);
+}
+
+
+
 
 /***********************************************************************************************************************************************************/
 //路径点策略，没完。。
