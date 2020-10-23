@@ -1,6 +1,6 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 
-//³õÊ¼¶Î¹æ»®Î¢·Ö·½³Ì
+//åˆå§‹æ®µè§„åˆ’å¾®åˆ†æ–¹ç¨‹
 vec dxde1(double e, vec x)
 {
 	double sigma = sig0_a ;
@@ -16,7 +16,7 @@ vec dxde1(double e, vec x)
 	return xdot;
 }
 
-//³õÊ¼¶Î·ÂÕæÎ¢·Ö·½³Ì
+//åˆå§‹æ®µä»¿çœŸå¾®åˆ†æ–¹ç¨‹
 vec dxdt1(double t, vec x)
 {
 	double sigma = sig0;
@@ -40,7 +40,7 @@ vec dxdt1(double t, vec x)
 	return xdot;
 }
 
-//»¬Ïè¶Î¹æ»®(µ¥)Î¢·Ö·½³Ì
+//æ»‘ç¿”æ®µè§„åˆ’(å•)å¾®åˆ†æ–¹ç¨‹
 double dvds1(double s, double v)
 {
 	
@@ -67,7 +67,7 @@ double dvds1(double s, double v)
 	return vdot;
 }
 
-//»¬Ïè¶Î¹æ»®(¶à)Î¢·Ö·½³Ì
+//æ»‘ç¿”æ®µè§„åˆ’(å¤š)å¾®åˆ†æ–¹ç¨‹
 vec dvds2(double s, vec x, double sigma)
 {
 	double r = x(0);
@@ -116,7 +116,7 @@ vec dxde2(double e, vec x, double sigma)
 }
 
 
-//ÔË¶¯Î¢·Ö·½³Ì
+//è¿åŠ¨å¾®åˆ†æ–¹ç¨‹
 vec dxdt2(double t, vec x,double sigma,double alpha)
 {
 	
@@ -147,10 +147,10 @@ vec dxdt2(double t, vec x,double sigma,double alpha)
 	return xdot;
 }
 
-//·Ö¶Î¶ş´Î²åÖµ
+//åˆ†æ®µäºŒæ¬¡æ’å€¼
 vec interp2(double s_togo, mat Ref)
 {
-	uword i = abs(Ref.col(0) - s_togo).index_min();
+	uword i = find_index(abs(Ref.col(0) - s_togo));
 	uword n_r = Ref.n_rows;
 	uword n_c = Ref.n_cols;
 	vec out(n_c - 1);
@@ -173,8 +173,26 @@ vec interp2(double s_togo, mat Ref)
 
 }
 
+uword find_index(vec x)
+{
+	uword num = x.n_elem;
+	double min = x(0);
+	uword index_min = 0;
+	for (uword i = 0; i < num; i++)
+	{
+		if (min > x(i))
+		{
+			min = x(i);
+			index_min = i;
+		}
+			
+	}
+	return index_min;
+}
 
-//¿ØÖÆÁ¿±ä»¯·ù¶È
+
+
+//æ§åˆ¶é‡å˜åŒ–å¹…åº¦
 double d_mag(double theta)
 {
 	if (theta>5 * pi / 180)

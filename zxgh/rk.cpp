@@ -1,6 +1,6 @@
 #include "pch.h"
 
-//≥ı º∂ŒπÊªÆ
+//ÂàùÂßãÊÆµËßÑÂàí
 mat rk1(vec espan, vec x0)
 {
 	uword n = espan.n_elem;
@@ -68,7 +68,7 @@ mat rk2(double e0,double ef, vec x0)
 	return xx.rows(0, i - 1);
 }*/
 
-//º∆À„≥ı º∂Œ≤ŒøºπÏº£
+//ËÆ°ÁÆóÂàùÂßãÊÆµÂèÇËÄÉËΩ®Ëøπ
 mat rk2(vec x0, vec statef)
 {
 	double thetaf = statef[1];
@@ -139,7 +139,7 @@ mat rk2(vec x0, vec statef)
 	return xx.rows(0, i - 1);
 }
 
-//2∑∂ ˝
+//2ËåÉÊï∞
 double norm_2(vec x)
 {
 	double s = 0;
@@ -150,16 +150,16 @@ double norm_2(vec x)
 	return sqrt(s);
 }
 
-//ª¨œË∂ŒπÊªÆ(µ•)
+//ÊªëÁøîÊÆµËßÑÂàí(Âçï)
 double rk3(double s_togo, double v)
 {	
 	double x = v;
 	double k1, k2, k3, k4;
 	uword i;
 	double s = 0;
-	vec sspan = linspace(s_togo, 0, 10000);
-	double h = -s_togo / 9999;
-	for (i = 0; i < 9999; i++)
+	vec sspan = linspace(s_togo, 0, 3000);
+	double h = -s_togo / 2999;
+	for (i = 0; i < 2999; i++)
 	{
 		s = sspan(i);
 		k1 = dvds1(s, x);
@@ -172,7 +172,7 @@ double rk3(double s_togo, double v)
 	return x;
 }
 
-////ª¨œË∂ŒπÊªÆ(eŒ™◊‘±‰¡ø)
+////ÊªëÁøîÊÆµËßÑÂàí(e‰∏∫Ëá™ÂèòÈáè)
 //double rk4(double e0, vec x0)
 //{
 //	vec x = x0;
@@ -212,7 +212,7 @@ double rk3(double s_togo, double v)
 //	return x(2);
 //}
 
-//ª¨œË∂Œ∑¬’Ê
+//ÊªëÁøîÊÆµ‰ªøÁúü
 mat rk5(double s_togo, vec x1)
 {
 	uword num = 250;
@@ -335,7 +335,7 @@ mat rk5(double s_togo, vec x1)
 //}
 
 
-//≈£∂Ÿ∑®(rk5())
+//ÁâõÈ°øÊ≥ï(rk5())
 double newton_r_s( double v, double sigma)
 {
 	double f = 0;
@@ -356,11 +356,11 @@ double newton_r_s( double v, double sigma)
 	return x1;
 }
 
-//»´∂Œ∑¬’Ê
+//ÂÖ®ÊÆµ‰ªøÁúü
 mat rk(vec x0,vec statef)
 {
 	getTime();
-	cout << "‘Ÿ»Î∑¬’Êø™ º" << endl;
+	cout << "ÂÜçÂÖ•‰ªøÁúüÂºÄÂßã" << endl;
 	double thetaf = statef[1];
 	double phif = statef[2];
 	uword n = 6001;
@@ -369,6 +369,8 @@ mat rk(vec x0,vec statef)
 	vec k1(6), k2(6), k3(6), k4(6);
 	uword i;
 	mat xx(n,7);
+	//ÊúâÊïàÂØºËà™ÊØî
+	const double N_P = 4;
 
 	vec x = x0;
 	double t = 0;
@@ -383,6 +385,7 @@ mat rk(vec x0,vec statef)
 	double vf = statef[3];
 	
 	vec sigma_x(n);
+	vec alpha_x(n);
 	sigma_x(0) = sig0;
 
 	double s_togo;
@@ -390,13 +393,14 @@ mat rk(vec x0,vec statef)
 	double dalpha;
 	vec re(9);
 
+
 	for (i = 0; i < n; i++)
 	{
-		//÷–º‰ƒ≥ ±øÃÕª»ª∑¢œ÷“ª∏ˆΩ˚∑…«¯
+		//‰∏≠Èó¥ÊüêÊó∂ÂàªÁ™ÅÁÑ∂ÂèëÁé∞‰∏Ä‰∏™Á¶ÅÈ£ûÂå∫(bool)
 		//if (i == 1500)
 		//{
 		//	getTime();
-		//	cout << "º”»Î–¬µƒΩ˚∑…«¯" << endl;
+		//	cout << "Âä†ÂÖ•Êñ∞ÁöÑÁ¶ÅÈ£ûÂå∫" << endl;
 		//	//Noflyzone nfz4(43.0 / 180.0 * pi, 13.5 / 180.0 * pi, 3 / 180.0 * pi, 2);
 		//	Noflyzone nfz4(47.0 / 180.0 * pi, 20.5 / 180.0 * pi, 3 / 180.0 * pi, 1);
 		//	nfz.push_back(nfz4);
@@ -421,7 +425,7 @@ mat rk(vec x0,vec statef)
 		}
 		if (x(3) > vv0)
 		{
-			sigma = sig0;
+			sigma = fabs(sig0);
 		}
 		else
 		{
@@ -436,9 +440,10 @@ mat rk(vec x0,vec statef)
 		}
 
 		
-		s_togo = acos(cos(x(2))*cos(phif)*cos(x(1) - thetaf) + sin(x(2))*sin(phif));
-		if (Re*s_togo < 60000)
+		s_togo = acos(cos(x(2)) * cos(phif) * cos(x(1) - thetaf) + sin(x(2)) * sin(phif));
+		if (Re*s_togo < 50000)
 		{
+			//Âà§Êñ≠ÊòØÂê¶ËøõÂÖ•Êú´Âà∂ÂØºÈò∂ÊÆµ
 			break;
 		}
 		re = interp2(s_togo, Ref);
@@ -446,16 +451,14 @@ mat rk(vec x0,vec statef)
 		dalpha = d_mag(re(6)*(x(0) - re(0)) + re(7)*(x(3) - re(1)) + re(8)*(x(4) - re(2)));
 		//sigma = limit(sigma + dsigma, x(3));
 
-
-
 		sigma = sigma + dsigma;
 		alpha = alpha + dalpha;
 		
+		alpha_x(i) = alpha;
 		if (i > 0)
 		{
 			sigma_x(i) = sigma * sign_decide(sign(sigma_x(i - 1)), x, statef);
 		}
-
 
 		k1 = dxdt2(t, x, sigma_x(i), alpha);
 		k2 = dxdt2(t + h / 2, x + h * k1 / 2, sigma_x(i), alpha);
@@ -463,15 +466,158 @@ mat rk(vec x0,vec statef)
 		k4 = dxdt2(t + h, x + h * k3, sigma_x(i), alpha);
 		x= x + (h / 6)*(k1 + 2 * k2 + 2 * k3 + k4);
 
+	}
+
+	double R_TM;
+	double R_TM1;
+	double R_TM2;
+	double R_TM3;
+	double V_T;
+	double V_TM1;
+	double V_TM2;
+	double V_TM3;
+	double V_close;
+	double r;
+	double phi;
+	double theta;
+	double gamma;
+	double psi_t;
+	double psi;
+	double lambdadot;
+
+	double betadot;
+
+	double n1;
+	double u0;
+	double v;
+	double m_g = 2;
+	double n_g = 1;
+	double n_vertical;
+	double n_lateral;
+	double gammaf = -60 / 180 * pi;
+	double alpha1 = 0;
+	double R_TM_old = Re;
+	//Êú´Âà∂ÂØº
+	for (; i < n; i++)
+	{
+		t = tspan(i);
+		xx.submat(i, 1, i, 6) = x.t();
+		xx(i, 0) = t;
+
+		v = x(3);
+		ma = v * Vc / 340;
+		r = x(0);
+		theta = x(1);
+		phi = x(2);
+		psi = x(5);
+		gamma = x(4);
+		s_togo = acos(cos(phi)*cos(phif)*cos(theta - thetaf) + sin(phi)*sin(phif));
+
+		R_TM = Re * s_togo;
+		double R_TMa = 2 * Re * sin(s_togo / 2);
+
+		if (R_TM > R_TM_old || r < 1)
+		{
+			break;
+		}
+		/*if (theta > thetaf)
+		{
+			break;
+		}*/
+
+		if (phif - phi > 0)
+			psi_t = asin(cos(phif)*sin(thetaf - theta) / sin(acos(cos(phi)*cos(phif)*cos(theta - thetaf) + sin(phi)*sin(phif))));
+		else
+			psi_t = pi - asin(cos(phif)*sin(thetaf - theta) / sin(acos(cos(phi)*cos(phif)*cos(theta - thetaf) + sin(phi)*sin(phif))));
+
+		R_TM_old = R_TM;
+		R_TM1 = Re * (phif - phi);
+
+		double R_TM1a = R_TMa * cos(psi_t);
+		
+		R_TM2 = Re * cos(phif) * (thetaf - theta);
+		
+		double R_TM2a = R_TMa * sin(psi_t);
+		
+		R_TM3 = -Re * (r - 1);
+		V_T = v * Vc*cos(gamma);
+		V_TM1 = -V_T * cos(psi);
+		V_TM2 = -V_T * sin(psi);
+		V_TM3 = v * Vc*sin(gamma);
+		lambdadot = (R_TM1*V_TM2 - R_TM2 * V_TM1) / pow(R_TM, 2);
+		double lambdadota = (R_TM1a*V_TM2 - R_TM2a * V_TM1) / pow(R_TMa, 2);
+		betadot = (V_TM3* pow(R_TMa, 2) - R_TM3 * (R_TM1a*V_TM1 + R_TM2a * V_TM2)) / R_TMa / (pow(R_TMa, 2) + pow(R_TM3, 2));
+		double beta = fabs(atan(R_TM3 / R_TMa));
+		
+		double aa = psi_t - psi;
+		V_close = V_T * cos(psi_t - psi);
+		double v_close = -(R_TM1a*V_TM1 + R_TM2a * V_TM2) / R_TMa;
+	/*	if (v_close<0)
+		{
+
+			break;
+		}*/
+		
+		double V_close = (R_TMa * v_close + R_TM3 * V_TM3) / sqrt(pow(R_TMa, 2) + pow(R_TM3, 2));
+
+		n1 = N_P * v_close * lambdadot;
+		double n2 = 22 * V_close * betadot + 5 * (gamma - gammaf) * V_close / (R_TM / v_close);
+
+		u0 = gamma * (m_g + n_g + 3) / R_TMa - gammaf * (m_g + 1)*(n_g + 1) / R_TMa - (r*Re - Re) * (m_g + 2)*(n_g + 2) / pow(R_TMa, 2);
+		//n_vertical = (u0*pow(v*Vc, 2) - (pow(v*Vc, 2) / (r*Re) - g0))*cos(gamma);
+		n_vertical = (n2 - (pow(v*Vc, 2) / (r*Re) - g0))*cos(gamma);
+		n_lateral = (-n1 - pow(v*Vc, 2) / (r*Re)*cos(gamma)*sin(psi)*tan(phi))*cos(gamma);
+
+		sigma = atan(n_lateral / n_vertical);
+
+		double n_control = sqrt(pow(n_vertical, 2) + pow(n_lateral, 2));
+		alpha1=calcu_terminal_alpha(n_control, x);
+
+		//ÈúÄË¶Å‰øÆÊîπ
+		if (i > 0)
+		{
+			//sigma_x(i) = sigma * sign_decide(sign(sigma_x(i - 1)), x, statef);
+			sigma_x(i) = sigma;
+		}
+
+		k1 = dxdt2(t, x, sigma_x(i), alpha1);
+		k2 = dxdt2(t + h / 2, x + h * k1 / 2, sigma_x(i), alpha1);
+		k3 = dxdt2(t + h / 2, x + h * k2 / 2, sigma_x(i), alpha1);
+		k4 = dxdt2(t + h, x + h * k3, sigma_x(i), alpha1);
+		x = x + (h / 6)*(k1 + 2 * k2 + 2 * k3 + k4);
 
 	}
 
-	vec sigma1 = sigma_x.rows(0, i);
+	vec sigma1 = sigma_x.rows(0, i - 1);
 	sigma1.save("E:/zaixianguihua/pre_corre/sigma.data", raw_ascii);
-	
-	return xx.rows(0, i);
+	alpha_x.save("E:/zaixianguihua/pre_corre/alpha.data", raw_ascii);
+	return xx.rows(0, i - 1);
 }
 
+double calcu_terminal_alpha(double n, vec x)
+{
+	double v = x(3);
+	double r = x(0);
+	double theta = x(1);
+	double phi = x(2);
+	double psi = x(5);
+	double gamma = x(4);
+
+	double V = v * Vc;
+	double rho = rho0 * exp(-Re * (r - 1) / hs);
+	double q = 1.0 / 2 * rho*pow(V, 2);
+	double Cl_p = n * m / q / S;
+	double a = cl2;
+	double b = cl1;
+	double c = cl0 - Cl_p;
+
+	double alpha = (-b + sqrt(b*b - 4 * a*c)) / 2 / a;
+	if (alpha > 60.0 / 180 * pi)
+	{
+		alpha = 60.0 / 180 * pi;
+	}
+	return alpha;
+}
 
 double sign_decide(double sign0, vec x, vec statef)
 {
@@ -501,7 +647,7 @@ double sign_decide(double sign0, vec x, vec statef)
 			phif = waypoint(i, 1);
 			break;
 		}
-	}¬∑æ∂µ„*/
+	}Ë∑ØÂæÑÁÇπ*/
 
 	if (phif - phi > 0)
 		psi_t = asin(cos(phif)*sin(thetaf - theta) / sin(acos(cos(phi)*cos(phif)*cos(theta - thetaf) + sin(phi)*sin(phif))));
@@ -609,7 +755,7 @@ mat rk_off_init(vec espan, vec x0)
 
 
 /***********************************************************************************************************************************************************/
-//¬∑æ∂µ„≤ﬂ¬‘£¨√ªÕÍ°£°£
+//Ë∑ØÂæÑÁÇπÁ≠ñÁï•ÔºåÊ≤°ÂÆå„ÄÇ„ÄÇ
 /***********************************************************************************************************************************************************/
 
 
